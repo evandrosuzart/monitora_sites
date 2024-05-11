@@ -59,41 +59,43 @@ func exibeMenu() {
 func leComando() int {
 	var comandoLido int
 	fmt.Scan(&comandoLido)
-	fmt.Println("\nO comando escolhido foi", comandoLido, "\n")
+	fmt.Println("O comando escolhido foi", comandoLido)
 	return comandoLido
 }
 
 func iniciarMonitoramento() {
 	fmt.Println("Monitorando...")
-	sites := lerSitesDoArquivo()
+	sites := LerSitesDoArquivo("sites.txt")
 	for index := 0; index < monitoramentos; index++ {
 		for _, site := range sites {
-			testaSite(site)
+			TestaSite(site)
 		}
 		time.Sleep(delay * time.Second)
 	}
 }
 
-func testaSite(site string) {
+func TestaSite(site string) bool {
 	resp, err := http.Get(site)
 	if err != nil {
 		fmt.Println("Erro ao abrir site:", err)
-		return
+		return false
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 200 {
 		fmt.Println("Site:", site, "foi carregado com sucesso")
-		registraLog(site, true)
+		RegistraLog(site, true)
+		return true
 	} else {
 		fmt.Println("Site:", site, "está com problemas. Status Code:", resp.StatusCode)
-		registraLog(site, false)
+		RegistraLog(site, false)
+		return false
 	}
 }
 
-func lerSitesDoArquivo() []string {
+func LerSitesDoArquivo(fileToOpen string) []string {
 	var sites []string
-	arquivo, err := os.Open("sites.txt")
+	arquivo, err := os.Open(fileToOpen)
 	if err != nil {
 		fmt.Println("Erro ao abrir arquivo:", err)
 		return sites
@@ -117,15 +119,15 @@ func lerSitesDoArquivo() []string {
 	return sites
 }
 
-func registraLog(site string, status bool) {
+func RegistraLog(site string, status bool) bool {
 	arquivo, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		fmt.Println("Erro ao abrir arquivo:", err)
-		return
+		return false
 	}
 	defer arquivo.Close()
-
 	arquivo.WriteString(time.Now().Format("2006-01-02 15:04:05") + " | " + site + " | online: " + strconv.FormatBool(status) + "\n")
+	return true
 }
 
 func imprimeLogs() {
